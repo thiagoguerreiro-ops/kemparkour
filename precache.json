@@ -18,6 +18,7 @@
   "./src/levels/bairro09.js",
   "./src/levels/bairro10.js",
   "./src/levels/bairro11.js",
+  "./src/levels/bairro12.js",
   "./src/levels/build.js",
   "./src/levels/levels.js",
   "./src/levels/map.js",

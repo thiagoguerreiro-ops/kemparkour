@@ -57,7 +57,21 @@
         || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
       if (!isDev) {
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('./sw.js').catch(function () {});
+          navigator.serviceWorker.register('./sw.js').then(function (reg) {
+            // O Safari do iPhone, num app instalado na tela de início, só
+            // confere se saiu versão nova de vez em quando — não em toda
+            // abertura como no navegador comum. Então pedimos essa conferência
+            // na mão. E quando a versão nova assume o controle da página,
+            // recarregamos sozinhos (uma vez só) em vez de fazer o jogador
+            // fechar e abrir o app duas vezes pra ver a fase nova.
+            reg.update().catch(function () {});
+            var reloaded = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              if (reloaded) return;
+              reloaded = true;
+              location.reload();
+            });
+          }).catch(function () {});
         });
       }
     }
