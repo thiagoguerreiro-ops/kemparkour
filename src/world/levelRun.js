@@ -22,6 +22,11 @@ const MOVE_USED = {
   slide: (kem) => kem.state === 'slide',
   ledge: (kem) => kem.state === 'ledge',
   walljump: (kem) => kem.controlLock > 0,
+  roll: (kem) => kem.state === 'roll',
+  // O pulo duplo gasta o pulo extra no ar (recarrega no chão).
+  doublejump: (kem) => kem.state === 'air' && kem.airJumps === 0,
+  swing: (kem) => kem.state === 'swing',
+  wallrun: (kem) => kem.state === 'wallrun',
 };
 
 export class LevelRun {
