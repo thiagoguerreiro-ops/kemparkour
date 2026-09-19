@@ -3,6 +3,7 @@ import { LEVELS } from '../levels/levels.js';
 import { formatTime } from '../world/scoring.js';
 import { browserStorage, loadSave, isUnlocked, shopState } from '../save/save.js';
 import { CityBackdrop } from '../render/cityBackdrop.js';
+import { themeForLevel } from '../render/themes.js';
 import { DancePlayer } from '../render/dancePlayer.js';
 import { findDance } from '../render/dances.js';
 import { outfitFor } from '../render/outfits.js';
@@ -73,7 +74,7 @@ export class ResultsScene extends Phaser.Scene {
     const save = loadSave(browserStorage());
     const hasNext = levelIndex + 1 < LEVELS.length && isUnlocked(save, LEVELS, levelIndex + 1);
 
-    this.backdrop = new CityBackdrop(this);
+    this.backdrop = new CityBackdrop(this, themeForLevel(levelIndex + 1));
 
     this.add.text(VIEW.W / 2, 44, 'FASE COMPLETA!', HEADING_STYLE)
       .setOrigin(0.5).setAngle(-3).setShadow(4, 4, '#e23b3b', 0, true, true);

@@ -5,6 +5,7 @@ import { InputTracker, mergeHeld } from '../player/input.js';
 import { createFixedStepper } from '../core/fixedStep.js';
 import { KemRenderer } from '../render/kemRenderer.js';
 import { drawBackground, drawTiles } from '../render/tileRenderer.js';
+import { themeForLevel } from '../render/themes.js';
 import { EntityRenderer } from '../render/entityRenderer.js';
 import { outfitFor } from '../render/outfits.js';
 import { TouchControls } from '../ui/touchControls.js';
@@ -36,8 +37,9 @@ export class GameScene extends Phaser.Scene {
     });
 
     const map = this.run.map;
-    drawBackground(this, map);
-    drawTiles(this, map);
+    const theme = themeForLevel(this.levelIndex + 1);
+    drawBackground(this, map, theme);
+    drawTiles(this, map, theme);
     this.entityView = new EntityRenderer(this);
     this.kemView = new KemRenderer(this, outfitFor(shopState(save)));
 

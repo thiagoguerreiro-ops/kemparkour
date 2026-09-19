@@ -62,6 +62,42 @@ for (const dir of [-1, 1]) {
   }
 }
 
+// Segundos depois do início do primeiro pulo (já solto) até apertar de novo,
+// pro pulo duplo (recarregado no chão/parede/barra — ver tryDoubleJump). Um
+// tapinha curto solta cedo (dá pra apertar de novo logo, o que rende mais
+// altura total: o segundo pulo pega o Kem ainda subindo); um pulo cheio
+// segurado só solta depois de FULL_JUMP_HOLD, então o segundo toque precisa
+// vir depois disso — mas apertar de novo bem na soltada é o que rende mais
+// altura no total (medido: ~3.6 tiles com tapinha, ~6 tiles com pulo cheio).
+// Cada lista só tem atrasos maiores que o próprio jumpHold (senão o botão
+// nunca solta e não haveria uma segunda borda de "apertou"). Só entram no
+// plano de tentativas quando a fase já libera 'doublejump' (movesForLevel).
+const DOUBLE_JUMP_DELAYS_AFTER_SHORT_HOP = [0.1, 0.2, 0.3];
+const DOUBLE_JUMP_DELAYS_AFTER_FULL_HOLD = [0.4, 0.5, 0.65];
+
+// Mesma ideia do ATTEMPTS básico (parado, com corrida, na beirada), mas só
+// pra quem tem pulo duplo: testa as duas durações de primeiro pulo (tapinha
+// e pulo cheio) com corrida pros lados e alguns atrasos até o segundo toque.
+const DOUBLE_JUMP_ATTEMPTS = [];
+for (const [jumpHold, secondDelays] of [
+  [SHORT_HOP_HOLD, DOUBLE_JUMP_DELAYS_AFTER_SHORT_HOP],
+  [FULL_JUMP_HOLD, DOUBLE_JUMP_DELAYS_AFTER_FULL_HOLD],
+]) {
+  for (const dir of [-1, 0, 1]) {
+    const delays = dir === 0 ? [0] : [0, ...RUNUP_DELAYS];
+    for (const delay of delays) {
+      for (const secondDelay of secondDelays) {
+        DOUBLE_JUMP_ATTEMPTS.push({ dir, jumpHold, delay, edge: false, secondDelay });
+      }
+    }
+  }
+  for (const dir of [-1, 1]) {
+    for (const secondDelay of secondDelays) {
+      DOUBLE_JUMP_ATTEMPTS.push({ dir, jumpHold, delay: 0, edge: true, secondDelay });
+    }
+  }
+}
+
 const tileKey = (tx, ty) => `${tx},${ty}`;
 
 // Um tile (tx, ty) é "de pé" se há chão sólido embaixo e o corpo do Kem cabe
@@ -139,6 +175,34 @@ function basicPolicy({ dir, jumpHold, delay, edge, slideAt = null }) {
     },
     after(t, kem) {
       if (edge && jumpAt === null && kem.state === 'air') jumpAt = t + PHYS.STEP;
+    },
+    gaveUp() { return false; },
+  };
+}
+
+// Pulo duplo: igual ao básico (correr/pulo na beirada com atraso), mas
+// solta o botão e aperta de novo `secondDelay` segundos depois do primeiro
+// pulo — a segunda borda de subida é o que recarrega o ar (tryDoubleJump).
+// Sem 'doublejump' liberado esse segundo toque simplesmente não faz nada
+// (kem.can('doublejump') volta falso), então a tentativa vira um pulo comum.
+function doubleJumpPolicy({ dir, jumpHold, delay, edge, secondDelay }) {
+  let jumpAt = edge ? null : delay;
+  let secondAt = null;
+  return {
+    duration: ATTEMPT_TIME,
+    input(t) {
+      const firstHolding = jumpHold > 0 && jumpAt !== null && t >= jumpAt && t < jumpAt + jumpHold;
+      const secondHolding = secondAt !== null && t >= secondAt && t < secondAt + jumpHold;
+      return {
+        left: dir < 0,
+        right: dir > 0,
+        jump: firstHolding || secondHolding,
+        action: false,
+      };
+    },
+    after(t, kem) {
+      if (edge && jumpAt === null && kem.state === 'air') jumpAt = t + PHYS.STEP;
+      if (jumpAt !== null && secondAt === null && t >= jumpAt + secondDelay) secondAt = t + PHYS.STEP;
     },
     gaveUp() { return false; },
   };
@@ -223,12 +287,17 @@ function nearAnyPlatform(tx, ty, defs) {
 // tenta caronas (subir, ficar parado sendo levado, pular pro lado) em vários
 // pontos do ciclo da plataforma; com o wall jump liberado, também tenta
 // chaminés (pula de parede em parede alternando o lado a cada toque, veja
-// chimneyPolicy). Sempre que o Kem fica pendurado numa beirada durante uma
-// tentativa, a entrada passa a apertar A em toques alternados até ele subir
-// ou soltar — isso vale pra qualquer política, não só pra beirada em si.
-// Ventiladores empurram o Kem durante todas as tentativas, igual à partida
-// de verdade. De quebra, marca que moedas/adesivos um Kem alcançável chega a
-// tocar (parado ou no ar).
+// chimneyPolicy); com o pulo duplo liberado, também tenta soltar o botão e
+// apertar de novo no ar depois de alguns atrasos (veja doubleJumpPolicy).
+// Sempre que o Kem fica pendurado numa beirada durante uma tentativa, a
+// entrada passa a apertar A em toques alternados até ele subir ou soltar —
+// isso vale pra qualquer política, não só pra beirada em si. Ventiladores
+// empurram o Kem durante todas as tentativas, igual à partida de verdade. De
+// quebra, marca que moedas/adesivos um Kem alcançável chega a tocar (parado
+// ou no ar). Uma queda alta que termina "tonto" (rolamento perdido ou não
+// liberado ainda) não é queda de verdade: 'stunned' está em GROUNDED_STATES,
+// então o tile onde o Kem aterrissa já conta como alcançado (o atordoado só
+// trava o jogador por um tempo, ele não morre nem volta pro início).
 export function computeReachability(map, spawn, number, items = [], extras = {}) {
   const unlocked = movesForLevel(number);
   const start = tileOfFeet(spawn.x, spawn.y);
@@ -284,6 +353,9 @@ export function computeReachability(map, spawn, number, items = [], extras = {})
     }
     if (unlocked.includes('walljump')) {
       for (const dir of [-1, 1]) plans.push({ phase: 0, policy: () => chimneyPolicy({ dir }) });
+    }
+    if (unlocked.includes('doublejump')) {
+      for (const a of DOUBLE_JUMP_ATTEMPTS) plans.push({ phase: 0, policy: () => doubleJumpPolicy(a) });
     }
 
     for (const plan of plans) {

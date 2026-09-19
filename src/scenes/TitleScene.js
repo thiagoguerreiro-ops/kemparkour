@@ -2,6 +2,7 @@ import { VIEW } from '../config.js';
 import { browserStorage, levelProgress, loadSave, shopState, availableCoins } from '../save/save.js';
 import { LEVELS } from '../levels/levels.js';
 import { CityBackdrop } from '../render/cityBackdrop.js';
+import { themeForSave } from '../render/themes.js';
 import { DancePlayer } from '../render/dancePlayer.js';
 import { findDance } from '../render/dances.js';
 import { outfitFor } from '../render/outfits.js';
@@ -31,7 +32,7 @@ export class TitleScene extends Phaser.Scene {
     const coins = availableCoins(save);
     const shop = shopState(save);
 
-    this.backdrop = new CityBackdrop(this);
+    this.backdrop = new CityBackdrop(this, themeForSave(save, LEVELS));
 
     // O logo em grafite, balançando de leve — a tela nunca fica parada.
     const title = createGraffitiTitle(this, VIEW.W / 2, 124).setScale(1.15).setDepth(10);

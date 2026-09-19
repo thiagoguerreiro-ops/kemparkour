@@ -1,8 +1,9 @@
 import { VIEW } from '../config.js';
-import { CITY } from '../render/palette.js';
+import { themeForSave } from '../render/themes.js';
 import {
   browserStorage, loadSave, writeSave, shopState, availableCoins, buyItem, equipItem,
 } from '../save/save.js';
+import { LEVELS } from '../levels/levels.js';
 import { TABS, itemsByTab } from '../shop/catalog.js';
 import { DANCES } from '../render/dances.js';
 import { drawKem, poseFor } from '../render/kemRenderer.js';
@@ -59,8 +60,9 @@ export class ShopScene extends Phaser.Scene {
     this.animT = 0;
     this.toastTimer = null;
 
+    const theme = themeForSave(this.saveData, LEVELS);
     const bg = this.add.graphics().setDepth(-10);
-    bg.fillGradientStyle(CITY.skyTop, CITY.skyTop, CITY.skyBottom, CITY.skyBottom, 1);
+    bg.fillGradientStyle(theme.skyTop, theme.skyTop, theme.skyBottom, theme.skyBottom, 1);
     bg.fillRect(0, 0, VIEW.W, VIEW.H);
 
     addBackButton(this, 'Title');
