@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- Fonte do ícone do app. Não é usado pelo jogo: serve para gerar os PNGs
+     (assets/icon-180/192/512.png) tirando foto com o Chrome headless:
+       chrome --headless=new --window-size=N,N --screenshot=... icon-source.html?size=N
+     O desenho é o mesmo logo da tela inicial: "KEM" em grafite amarelo com a
+     sombra 3D vermelho/roxo/preto, num muro escuro. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Sedgwick Ave Display';
+    src: url('fonts/sedgwick-ave-display-latin.woff2') format('woff2');
+    font-display: block;
+  }
+  html, body { margin: 0; padding: 0; background: transparent; }
+  .icon {
+    --s: 512px;
+    width: var(--s); height: var(--s); border-radius: calc(var(--s) * 0.21);
+    background: radial-gradient(circle at 50% 38%, #2c2f3d 0%, #1d1d24 62%, #121218 100%);
+    display: grid; place-items: center; overflow: hidden; position: relative;
+  }
+  /* respingo de spray roxo atrás da palavra */
+  .icon::before {
+    content: ""; position: absolute; width: 78%; height: 46%; left: 11%; top: 28%;
+    background: radial-gradient(ellipse at center, rgba(122,92,255,.55), rgba(122,92,255,0) 70%);
+  }
+  .word {
+    position: relative; font-family: 'Sedgwick Ave Display', cursive; color: #ffd23f;
+    font-size: calc(var(--s) * 0.40); line-height: 1; transform: rotate(-8deg);
+    -webkit-text-stroke: calc(var(--s) * 0.014) #1d1d24; paint-order: stroke fill;
+    text-shadow:
+      calc(var(--s) * 0.012) calc(var(--s) * 0.012) 0 #e23b3b,
+      calc(var(--s) * 0.024) calc(var(--s) * 0.024) 0 #7a5cff,
+      calc(var(--s) * 0.036) calc(var(--s) * 0.036) 0 #0b0b0f;
+  }
+  /* chão de telhado, a assinatura das fases */
+  .roof { position: absolute; left: 0; right: 0; bottom: 0; height: 13%; background: #f2a65a; border-top: calc(var(--s) * 0.025) solid #ffd08a; }
+</style>
+</head>
+<body>
+  <div class="icon"><div class="word">KEM</div><div class="roof"></div></div>
+  <script>
+    const size = Number(new URLSearchParams(location.search).get('size')) || 512;
+    document.querySelector('.icon').style.setProperty('--s', size + 'px');
+  </script>
+</body>
+</html>
