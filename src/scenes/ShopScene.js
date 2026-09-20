@@ -1,7 +1,7 @@
 import { VIEW } from '../config.js';
 import { themeForSave } from '../render/themes.js';
 import {
-  browserStorage, loadSave, writeSave, shopState, availableCoins, buyItem, equipItem,
+  browserStorage, loadSave, writeSave, shopState, availableCoins, buyItem, equipItem, isItemUnlocked,
 } from '../save/save.js';
 import { LEVELS } from '../levels/levels.js';
 import { TABS, visibleItemsByTab } from '../shop/catalog.js';
@@ -17,19 +17,30 @@ import { addBackButton } from '../ui/backButton.js';
 // (pure): esta cena só desenha e escreve o save depois de cada ação.
 
 const TAB_LABEL = { roupa: 'ROUPAS', acessorio: 'ACESSÓRIOS', danca: 'DANCINHAS' };
-const CARD_W = 204;
-const CARD_H = 280;
-const PITCH = 222;
-const GRID_Y = 306;
-const PORTRAIT_SCALE = 2.1;
 
-const NAME_STYLE = {
-  fontFamily: 'system-ui, sans-serif', fontSize: '18px', fontStyle: 'bold',
-  color: '#ffffff', align: 'center', wordWrap: { width: CARD_W - 28 },
+// Duas disposições de cartões. Com até 4 itens na aba (Dancinhas) fica uma
+// fileira de cartões grandes, como sempre foi. Com mais itens (Roupas: 6,
+// Acessórios: 7) viram duas fileiras de cartões menores (216x180, bem acima
+// dos 60px de toque mesmo no iPhone), com o retrato do Kem um pouco menor.
+const BIG = {
+  rows: 1, cardW: 204, cardH: 280, pitchX: 222, pitchY: 0, y0: 306,
+  portraitY: -45, portraitScale: 2.1, nameY: 78, statusY: 122, nameSize: 18, statusSize: 22,
 };
-const STATUS_STYLE = {
-  fontFamily: 'system-ui, sans-serif', fontSize: '22px', fontStyle: 'bold',
+const COMPACT = {
+  rows: 2, cardW: 216, cardH: 180, pitchX: 228, pitchY: 192, y0: 218,
+  portraitY: -30, portraitScale: 1.8, nameY: 36, statusY: 68, nameSize: 17, statusSize: 20,
 };
+const MAX_BIG = 4;
+
+const nameStyle = (L) => ({
+  fontFamily: 'system-ui, sans-serif', fontSize: `${L.nameSize}px`, fontStyle: 'bold',
+  color: '#ffffff', align: 'center', wordWrap: { width: L.cardW - 24 },
+});
+const statusStyle = (L) => ({
+  fontFamily: 'system-ui, sans-serif', fontSize: `${L.statusSize}px`, fontStyle: 'bold',
+  align: 'center', wordWrap: { width: L.cardW - 20 },
+});
+const LOCK_COLOR = '#ffb84d';
 const TAB_STYLE = {
   fontFamily: 'system-ui, sans-serif', fontSize: '22px', fontStyle: 'bold', color: '#ffffff',
 };
@@ -81,15 +92,15 @@ export class ShopScene extends Phaser.Scene {
     this.tabButtons = TABS.map((tab, i) => this._buildTabButton(tab, 200 + i * 280, 88));
     this._paintTabs();
 
-    this.toast = this.add.text(VIEW.W / 2, 500, '', TOAST_STYLE)
+    this.toast = this.add.text(VIEW.W / 2, 512, '', TOAST_STYLE)
       .setOrigin(0.5).setVisible(false).setDepth(60);
 
     this._buildGrid();
 
     this.input.keyboard.on('keydown-LEFT', () => this._moveFocus(-1));
-    this.input.keyboard.on('keydown-UP', () => this._moveFocus(-1));
+    this.input.keyboard.on('keydown-UP', () => this._moveFocusRow(-1));
     this.input.keyboard.on('keydown-RIGHT', () => this._moveFocus(1));
-    this.input.keyboard.on('keydown-DOWN', () => this._moveFocus(1));
+    this.input.keyboard.on('keydown-DOWN', () => this._moveFocusRow(1));
     const act = () => this._activateItem(this.cards[this.focus]?.item);
     this.input.keyboard.on('keydown-SPACE', act);
     this.input.keyboard.on('keydown-ENTER', act);
@@ -148,38 +159,49 @@ export class ShopScene extends Phaser.Scene {
     if (this.cards) for (const c of this.cards) c.destroy();
     // Itens secretos (a Dança do Campeão) só aparecem depois de ganhos.
     const items = visibleItemsByTab(this.tab, shopState(this.saveData).owned);
-    const startX = VIEW.W / 2 - ((items.length - 1) * PITCH) / 2;
-    this.cards = items.map((item, i) => this._buildCard(item, startX + i * PITCH, GRID_Y));
+    const L = items.length <= MAX_BIG ? BIG : COMPACT;
+    this.cols = L.rows === 1 ? Math.max(1, items.length) : Math.ceil(items.length / L.rows);
+    this.cards = items.map((item, i) => {
+      const row = Math.floor(i / this.cols);
+      const inRow = Math.min(this.cols, items.length - row * this.cols);
+      const startX = VIEW.W / 2 - ((inRow - 1) * L.pitchX) / 2;
+      return this._buildCard(item, startX + (i - row * this.cols) * L.pitchX, L.y0 + row * L.pitchY, L);
+    });
     this.focus = Math.min(this.focusByTab[this.tab] ?? 0, items.length - 1);
     this._paintFocus();
   }
 
-  _buildCard(item, cx, cy) {
+  _buildCard(item, cx, cy, L) {
     const container = this.add.container(cx, cy).setDepth(2);
 
     const ring = this.add.graphics().setVisible(false);
     ring.lineStyle(4, 0x5ecbff, 1);
-    ring.strokeRoundedRect(-CARD_W / 2 - 6, -CARD_H / 2 - 6, CARD_W + 12, CARD_H + 12, 22);
+    ring.strokeRoundedRect(-L.cardW / 2 - 6, -L.cardH / 2 - 6, L.cardW + 12, L.cardH + 12, 22);
 
     const bg = this.add.graphics();
 
     const portraitG = this.add.graphics();
-    const portrait = this.add.container(0, -45, [portraitG]).setScale(PORTRAIT_SCALE);
+    const portrait = this.add.container(0, L.portraitY, [portraitG]).setScale(L.portraitScale);
 
-    const name = this.add.text(0, 78, item.name, NAME_STYLE).setOrigin(0.5);
-    const status = this.add.text(0, 122, '', STATUS_STYLE).setOrigin(0.5);
+    const name = this.add.text(0, L.nameY, item.name, nameStyle(L)).setOrigin(0.5);
+    const status = this.add.text(0, L.statusY, '', statusStyle(L)).setOrigin(0.5);
 
-    container.add([ring, bg, portrait, name, status]);
+    // Cadeado (só aparece enquanto o item está trancado), no alto do cartão.
+    const lock = this.add.graphics().setVisible(false);
+    this._drawPadlock(lock, 0, 0);
+    lock.setPosition(L.cardW / 2 - 32, -L.cardH / 2 + 34).setScale(1.3);
+
+    container.add([ring, bg, portrait, lock, name, status]);
 
     bg.setInteractive({
-      hitArea: new Phaser.Geom.Rectangle(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H),
+      hitArea: new Phaser.Geom.Rectangle(-L.cardW / 2, -L.cardH / 2, L.cardW, L.cardH),
       hitAreaCallback: Phaser.Geom.Rectangle.Contains,
       useHandCursor: true,
     });
     bg.on('pointerup', () => this._activateItem(item));
 
     const card = {
-      item, cx, cy, container, ring, bg, portraitG, portrait, name, status,
+      item, L, cx, cy, container, ring, bg, portraitG, portrait, name, status, lock,
       destroy: () => container.destroy(),
     };
     this._paintCard(card);
@@ -187,24 +209,47 @@ export class ShopScene extends Phaser.Scene {
     return card;
   }
 
+  // Cadeado desenhado (sem emoji): corpo dourado, argola de aço, buraquinho.
+  _drawPadlock(g, x, y) {
+    g.lineStyle(4, 0xc9d0d8, 1);
+    g.beginPath();
+    g.arc(x, y - 7, 7, Math.PI, 0, false);
+    g.strokePath();
+    g.fillStyle(0xffb84d, 1);
+    g.fillRoundedRect(x - 11, y - 6, 22, 18, 4);
+    g.lineStyle(2, 0x7a4b00, 1);
+    g.strokeRoundedRect(x - 11, y - 6, 22, 18, 4);
+    g.fillStyle(0x3a2500, 1);
+    g.fillCircle(x, y + 2.5, 2.6);
+    g.fillRect(x - 1, y + 3, 2, 5);
+  }
+
   _paintCard(card) {
-    const { item, bg } = card;
+    const { item, bg, L } = card;
     const shop = shopState(this.saveData);
     const owned = shop.owned.includes(item.id);
     const equipped = shop.equipped[item.tab] === item.id;
     const affordable = item.price <= availableCoins(this.saveData);
+    const locked = !owned && !isItemUnlocked(this.saveData, item);
 
     bg.clear();
     bg.fillStyle(0x000000, 0.25);
-    bg.fillRoundedRect(-CARD_W / 2 + 3, -CARD_H / 2 + 6, CARD_W, CARD_H, 18);
-    bg.fillStyle(0x1d1d24, equipped ? 1 : 0.88);
-    bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 18);
-    bg.lineStyle(4, equipped ? 0xffd23f : 0xffffff, equipped ? 1 : 0.25);
-    bg.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 18);
+    bg.fillRoundedRect(-L.cardW / 2 + 3, -L.cardH / 2 + 6, L.cardW, L.cardH, 18);
+    bg.fillStyle(0x1d1d24, equipped ? 1 : locked ? 0.7 : 0.88);
+    bg.fillRoundedRect(-L.cardW / 2, -L.cardH / 2, L.cardW, L.cardH, 18);
+    if (locked) bg.lineStyle(4, 0xffb84d, 0.45);
+    else bg.lineStyle(4, equipped ? 0xffd23f : 0xffffff, equipped ? 1 : 0.25);
+    bg.strokeRoundedRect(-L.cardW / 2, -L.cardH / 2, L.cardW, L.cardH, 18);
+
+    // Trancado: o Kem aparece apagadinho (a criança vê o que está buscando).
+    card.lock.setVisible(locked);
+    card.portrait.setAlpha(locked ? 0.5 : 1);
+    card.name.setAlpha(locked ? 0.75 : 1);
 
     let text;
     let color;
-    if (equipped) { text = 'EM USO'; color = '#ffd23f'; }
+    if (locked) { text = item.unlock.hint; color = LOCK_COLOR; }
+    else if (equipped) { text = 'EM USO'; color = '#ffd23f'; }
     else if (owned && item.secret) { text = '🏆 Prêmio!'; color = '#8be08b'; }
     else if (owned) { text = '✓ Comprado'; color = '#8be08b'; }
     else { text = `🪙 ${item.price}`; color = affordable ? '#ffffff' : '#8a939e'; }
@@ -250,6 +295,18 @@ export class ShopScene extends Phaser.Scene {
     this._paintFocus();
   }
 
+  // Cima/baixo: com uma fileira só anda um cartão (como sempre); com duas
+  // fileiras pula uma fileira — e no fim de uma fileira mais curta cai no último.
+  _moveFocusRow(dir) {
+    if (!this.cards.length) return;
+    if (this.cols >= this.cards.length) { this._moveFocus(dir); return; }
+    const last = this.cards.length - 1;
+    let target = this.focus + dir * this.cols;
+    if (target > last && Math.floor(this.focus / this.cols) < Math.floor(last / this.cols)) target = last;
+    if (target < 0 || target > last) return;
+    this._moveFocus(target - this.focus);
+  }
+
   // --- comprar / equipar --------------------------------------------------
 
   _activateItem(item) {
@@ -259,6 +316,13 @@ export class ShopScene extends Phaser.Scene {
     const equipped = shop.equipped[item.tab] === item.id;
     if (equipped) return;
     const card = this.cards.find((c) => c.item.id === item.id);
+
+    // Trancado: só um tremidinho e a dica de onde chegar.
+    if (!owned && !isItemUnlocked(this.saveData, item)) {
+      this._shake(card);
+      this._toast(item.unlock.hint);
+      return;
+    }
 
     if (owned) {
       const { data, result } = equipItem(this.saveData, item.id);

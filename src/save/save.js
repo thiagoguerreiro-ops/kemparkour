@@ -124,6 +124,19 @@ export function shopState(data) {
   };
 }
 
+// O id de uma fase pelo número (1..30): 'bairro-01' ... 'bairro-30'.
+export function levelIdOf(number) {
+  return `bairro-${String(number).padStart(2, '0')}`;
+}
+
+// Um item com `unlock: { afterLevel }` só libera quando a fase de número
+// `afterLevel` está completa no save. Itens sem `unlock` estão sempre liberados.
+export function isItemUnlocked(data, item) {
+  const after = item?.unlock?.afterLevel;
+  if (typeof after !== 'number') return true;
+  return levelProgress(data, levelIdOf(after)).complete;
+}
+
 // Moedas pegas menos moedas gastas — nunca negativo.
 export function availableCoins(data) {
   return Math.max(0, totalCoins(data) - shopState(data).spent);
@@ -139,6 +152,9 @@ export function buyItem(data, itemId) {
   const shop = shopState(data);
   if (shop.owned.includes(itemId)) {
     return { data, result: { ok: false, reason: 'ja-comprado' } };
+  }
+  if (!isItemUnlocked(data, item)) {
+    return { data, result: { ok: false, reason: 'bloqueado' } };
   }
   if (item.price > availableCoins(data)) {
     return { data, result: { ok: false, reason: 'sem-moedas' } };

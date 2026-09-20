@@ -7,23 +7,33 @@
 
 import { OUTFIT_DEFAULT } from './palette.js';
 
-// Só a cor do moletom muda entre roupas — calça azul-clara, tênis branco,
+// Só a cor do moletom muda entre roupas (mais, no colete e no moletom neon,
+// um sinalizador de enfeite: `stripes` / `neonA`+`neonB`) — calça azul-clara, tênis branco,
 // carinha amarela e a pele continuam sempre iguais (pedido do Thiago).
 const ROUPA_COLORS = {
   'roupa-preta': {}, // o original, já é o OUTFIT_DEFAULT
   'roupa-vermelha': { hoodie: 0xd9453a, hoodieShade: 0x8a241d },
   'roupa-verde-limao': { hoodie: 0x7ed321, hoodieShade: 0x4c8a12 },
   'roupa-branca': { hoodie: 0xf6f8fb, hoodieShade: 0xc9d0d8 },
+  // Centro: moletom laranja-amarelo com faixas refletivas prateadas no peito
+  // e nas mangas (`stripes` = a cor prata que `drawKem` usa nas faixas).
+  'colete-refletivo': { hoodie: 0xff9f1c, hoodieShade: 0xc96f00, stripes: 0xe6ebf2 },
+  // Cidade à noite: moletom quase preto com contorno brilhante ciano/magenta
+  // (`neonA`/`neonB` = as duas cores do brilho que `drawKem` desenha).
+  'moletom-neon': { hoodie: 0x0b0b16, hoodieShade: 0x05050b, neonA: 0x39f0ff, neonB: 0xff3df2 },
 };
 
 // Cada acessório liga um sinalizador que `drawKem` usa para desenhar (ou
-// não) um boné, óculos escuros ou mochila. Campos ausentes = nada muda,
+// não) um boné, óculos escuros, mochila, capacete, óculos de LED ou fones. Campos ausentes = nada muda,
 // então quem já chama `drawKem` sem outfit continua funcionando igual.
 const ACESSORIO_FLAGS = {
   'acessorio-nenhum': {},
   'bone-para-tras': { cap: true },
   'oculos-escuros': { sunglasses: true },
   mochila: { backpack: true },
+  'capacete-de-obra': { hardHat: true },
+  'oculos-de-led': { ledVisor: true },
+  'fones-de-ouvido': { headphones: true },
 };
 
 // A roupa (isolada, sem acessório) de um item da aba "roupa" — usada nos
