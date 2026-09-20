@@ -4,7 +4,7 @@ import {
   browserStorage, loadSave, writeSave, shopState, availableCoins, buyItem, equipItem,
 } from '../save/save.js';
 import { LEVELS } from '../levels/levels.js';
-import { TABS, itemsByTab } from '../shop/catalog.js';
+import { TABS, visibleItemsByTab } from '../shop/catalog.js';
 import { DANCES } from '../render/dances.js';
 import { drawKem, poseFor } from '../render/kemRenderer.js';
 import { outfitFor, outfitForRoupa, outfitForAcessorio } from '../render/outfits.js';
@@ -146,7 +146,8 @@ export class ShopScene extends Phaser.Scene {
 
   _buildGrid() {
     if (this.cards) for (const c of this.cards) c.destroy();
-    const items = itemsByTab(this.tab);
+    // Itens secretos (a Dança do Campeão) só aparecem depois de ganhos.
+    const items = visibleItemsByTab(this.tab, shopState(this.saveData).owned);
     const startX = VIEW.W / 2 - ((items.length - 1) * PITCH) / 2;
     this.cards = items.map((item, i) => this._buildCard(item, startX + i * PITCH, GRID_Y));
     this.focus = Math.min(this.focusByTab[this.tab] ?? 0, items.length - 1);
@@ -204,6 +205,7 @@ export class ShopScene extends Phaser.Scene {
     let text;
     let color;
     if (equipped) { text = 'EM USO'; color = '#ffd23f'; }
+    else if (owned && item.secret) { text = '🏆 Prêmio!'; color = '#8be08b'; }
     else if (owned) { text = '✓ Comprado'; color = '#8be08b'; }
     else { text = `🪙 ${item.price}`; color = affordable ? '#ffffff' : '#8a939e'; }
     card.status.setText(text).setColor(color);

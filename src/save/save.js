@@ -158,6 +158,19 @@ export function buyItem(data, itemId) {
   };
 }
 
+// Dá um item de presente (a Dança do Campeão da Fase 30): entra em
+// `shop.owned` sem gastar moedas e sem mudar o que está vestido. Pura e
+// idempotente — se já tem o item (ou o id não existe) devolve o mesmo save.
+export function grantItem(data, itemId) {
+  if (!findItem(itemId)) return data;
+  const shop = shopState(data);
+  if (shop.owned.includes(itemId)) return data;
+  return {
+    ...data,
+    shop: { ...shop, owned: [...shop.owned, itemId] },
+  };
+}
+
 // Equipa um item já comprado. Um item nunca comprado não pode ser equipado.
 export function equipItem(data, itemId) {
   const item = findItem(itemId);

@@ -18,10 +18,20 @@ export const CATALOG = [
   { id: 'danca-kem', tab: 'danca', name: 'Dança do Kem', price: 0 },
   { id: 'danca-robo', tab: 'danca', name: 'Robô', price: 45 },
   { id: 'danca-parafuso', tab: 'danca', name: 'Parafuso', price: 45 },
+  // Surpresa da grande final (Fase 30): ganha de graça ao zerar o jogo. Item
+  // `secret` não aparece na loja até estar no save (ver `visibleItemsByTab`)
+  // e nunca é o item "padrão" da aba (ver `freeItemOf`).
+  { id: 'danca-campeao', tab: 'danca', name: 'Dança do Campeão', price: 0, secret: true },
 ];
 
 export function itemsByTab(tab) {
   return CATALOG.filter((item) => item.tab === tab);
+}
+
+// O que a loja mostra numa aba: tudo, menos os itens secretos que o jogador
+// ainda não ganhou (`ownedIds` = os ids do `shop.owned` do save).
+export function visibleItemsByTab(tab, ownedIds = []) {
+  return itemsByTab(tab).filter((item) => !item.secret || ownedIds.includes(item.id));
 }
 
 export function findItem(itemId) {
@@ -29,6 +39,7 @@ export function findItem(itemId) {
 }
 
 // O item grátis de cada aba (o visual original), para voltar sempre ao padrão.
+// Itens secretos também custam 0, mas nunca são o padrão.
 export function freeItemOf(tab) {
-  return itemsByTab(tab).find((item) => item.price === 0) ?? null;
+  return itemsByTab(tab).find((item) => item.price === 0 && !item.secret) ?? null;
 }

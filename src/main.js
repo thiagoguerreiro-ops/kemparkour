@@ -5,6 +5,7 @@ import { ShopScene } from './scenes/ShopScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { ResultsScene } from './scenes/ResultsScene.js';
 import { TrainingScene } from './scenes/TrainingScene.js';
+import { EndingScene } from './scenes/EndingScene.js';
 
 // Tamanho da caixa do jogo medido pela área que o iPhone REALMENTE mostra
 // (visualViewport), descontando as áreas protegidas (Dynamic Island, cantos,
@@ -44,7 +45,7 @@ const game = new Phaser.Game({
   height: VIEW.H,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 4 },
-  scene: [TitleScene, MapScene, ShopScene, GameScene, ResultsScene, TrainingScene],
+  scene: [TitleScene, MapScene, ShopScene, GameScene, ResultsScene, EndingScene, TrainingScene],
 });
 
 // No iPhone, quando a tela gira (ou a barra do Safari aparece/some), o
