@@ -20,6 +20,9 @@ import { BAIRRO_19 } from './bairro19.js';
 import { BAIRRO_20 } from './bairro20.js';
 import { BAIRRO_21 } from './bairro21.js';
 import { BAIRRO_22 } from './bairro22.js';
+import { BAIRRO_23 } from './bairro23.js';
+import { BAIRRO_24 } from './bairro24.js';
+import { BAIRRO_25 } from './bairro25.js';
 
 // Fases entregues, em ordem. O número da fase é o índice + 1.
 export const LEVELS = [
@@ -45,4 +48,7 @@ export const LEVELS = [
   BAIRRO_20,
   BAIRRO_21,
   BAIRRO_22,
+  BAIRRO_23,
+  BAIRRO_24,
+  BAIRRO_25,
 ];
