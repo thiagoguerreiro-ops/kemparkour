@@ -15,7 +15,7 @@ const bars = (w, ...cols) => Array.from({ length: w }, (_, i) => (cols.includes(
 //   3) o vão de 8 tiles do pulo duplo e a escada de corrida na parede (dois
 //      vãos de 9 tiles, cada pouso 1 tile acima do anterior);
 //   4) do topo da escada, outra queda de 8 tiles (rolar) e UMA barra: buraco
-//      de 10 tiles na rua com a barra perto do meio;
+//      de 8 tiles na rua com a barra na coluna 5;
 //   5) o guindaste até o primeiro telhado e, ali, a subida final ao ar livre,
 //      de telhado em telhado (dois vãos de 4 tiles, cada telhado 2 tiles
 //      mais alto), até o telhado mais alto da cidade, largo e sem perigo.
@@ -182,14 +182,14 @@ export const BAIRRO_30 = buildLevel({
         { type: 'checkpoint', id: 'cp9', tx: 5, ty: 12 },
       ],
     },
-    // 12) A barra: buraco de 10 tiles na rua com a barra perto do meio (col 3),
-    //     a 2 tiles acima do chão (agarra com um pulo, balança, solta pro
-    //     outro lado). Largura 10.
+    // 12) A barra: buraco de 8 tiles na rua com a barra na coluna 5 (3 tiles
+    //     antes da beirada de lá), a 2 tiles acima do chão (agarra com um pulo,
+    //     balança, solta pro outro lado). Largura 8.
     {
       bands: [
-        [0, 9, dot(10)],
-        [10, 10, bars(10, 3)],
-        [11, 14, dot(10)],
+        [0, 9, dot(8)],
+        [10, 10, bars(8, 5)],
+        [11, 14, dot(8)],
       ],
       entities: [
         { type: 'coin', id: 'c16', tx: 5, ty: 8 },

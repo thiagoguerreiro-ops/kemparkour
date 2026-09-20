@@ -13,7 +13,7 @@ const wall = (n) => '#'.repeat(n);
 //   3) o ventilador sopra a favor e ajuda a cruzar 6 tiles;
 //   4) um telhado com UM cano de vapor, e a descida de 5 tiles pra rua;
 //   5) o vão de 8 tiles pede o pulo duplo (mesma altura, chão largo do outro lado);
-//   6) UMA barra num buraco de 10 tiles, com a barra perto do meio, o
+//   6) UMA barra num buraco de 8 tiles, com a barra na coluna 5, o
 //      checkpoint logo antes e um pouso largo;
 //   7) dois degraus de antena até a bandeira.
 // Checkpoints a no máximo 19 tiles um do outro; nenhum obstáculo passa da
@@ -104,15 +104,16 @@ export const BAIRRO_21 = buildLevel({
         { type: 'checkpoint', id: 'cp4', tx: 22, ty: 11 },
       ],
     },
-    // 6) A barra: buraco de 10 tiles com a barra no meio (col 5), a
-    //    2 tiles acima do chão (agarra com um pulo, balança, solta pro outro
-    //    lado). Pouso largo de 8 tiles e o checkpoint depois. Largura 18.
+    // 6) A barra: buraco de 8 tiles com a barra na coluna 5 (3 tiles antes
+    //    da beirada de lá), a 2 tiles acima do chão (agarra com um pulo,
+    //    balança, solta pro outro lado). Pouso largo de 8 tiles e o
+    //    checkpoint depois. Largura 16.
     {
       bands: [
-        [0, 8, dot(18)],
-        [9, 9, dot(5) + '=' + dot(12)],
-        [10, 11, dot(18)],
-        [12, 14, dot(10) + wall(8)],
+        [0, 8, dot(16)],
+        [9, 9, dot(5) + '=' + dot(10)],
+        [10, 11, dot(16)],
+        [12, 14, dot(8) + wall(8)],
       ],
       entities: [
         { type: 'coin', id: 'c11', tx: 6, ty: 8 },

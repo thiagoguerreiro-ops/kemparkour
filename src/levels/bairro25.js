@@ -122,14 +122,14 @@ export const BAIRRO_25 = buildLevel({
         { type: 'checkpoint', id: 'cp6', tx: 4, ty: 12 },
       ],
     },
-    // 8) A barra: buraco de 10 tiles na rua com a barra perto do meio (col 3),
-    //    a 2 tiles acima do chão (agarra com um pulo, balança, solta pro outro
-    //    lado). Largura 10.
+    // 8) A barra: buraco de 8 tiles na rua com a barra na coluna 5 (3 tiles
+    //    antes da beirada de lá), a 2 tiles acima do chão (agarra com um pulo,
+    //    balança, solta pro outro lado). Largura 8.
     {
       bands: [
-        [0, 9, dot(10)],
-        [10, 10, dot(3) + '=' + dot(6)],
-        [11, 14, dot(10)],
+        [0, 9, dot(8)],
+        [10, 10, dot(5) + '=' + dot(2)],
+        [11, 14, dot(8)],
       ],
       entities: [
         { type: 'coin', id: 'c12', tx: 5, ty: 8 },

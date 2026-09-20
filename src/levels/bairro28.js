@@ -18,7 +18,8 @@ const graf = (n) => 'W'.repeat(n);
 //   3) vão de 9 tiles com muro grafitado (corrida na parede); o vento contra
 //      (150) fica na ponta do pouso e come cerca de 1 tile da corrida;
 //   4) a rua, a chaminé de 3 tiles (wall jump, sobe 6) com um ventilador
-//      soprando de lado na boca dela, contra a saída (150);
+//      soprando de lado na boca dela, contra a saída (110, fraco pra não
+//      empurrar o Kem da parede nas últimas linhas da subida);
 //   5) o vão de 10 tiles com UMA barra bem no meio (4 tiles acima da beirada
 //      do telhado), pouso 3 tiles abaixo e um ventilador atrás dela (140);
 //   6) o guindaste até a torre da bandeira.
@@ -134,7 +135,7 @@ export const BAIRRO_28 = buildLevel({
         { type: 'checkpoint', id: 'cp4', tx: 4, ty: 12 },
         { type: 'coin', id: 'c11', tx: 6, ty: 12 },
         { type: 'sticker', id: 's2', tx: 10, ty: 6 },
-        { type: 'fan', tx: 12, ty: 6, dir: -1, range: 3, push: 150 },
+        { type: 'fan', tx: 12, ty: 6, dir: -1, range: 3, push: 110 },
         { type: 'checkpoint', id: 'cp5', tx: 15, ty: 6 },
         { type: 'coin', id: 'c12', tx: 19, ty: 6 },
       ],

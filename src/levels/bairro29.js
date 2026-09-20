@@ -11,12 +11,12 @@ const bars = (w, ...cols) => Array.from({ length: w }, (_, i) => (cols.includes(
 // bandeira no telhado de onde se vê a torre mais alta da cidade (a da grande
 // final). Nenhum movimento novo e nenhuma dica; cada obstáculo é do tamanho dos
 // das Fases 20 a 26 (o mais difícil deles nunca passa da Fase 10) e o desafio
-// é a fila, por isso tantos checkpoints (nunca mais de 16 tiles entre eles):
+// é a fila, por isso tantos checkpoints (nunca mais de 17 tiles entre eles):
 //   1) o andaime da primeira torre (beirada, muro de 5 tiles);
 //   2) o vão de 9 tiles do pulo duplo, caindo na rua;
 //   3) o guindaste leva até a boca da chaminé da segunda torre (wall jump,
 //      6 tiles), que termina no telhado mais alto da fase;
-//   4) desce um degrau e uma barra atravessa o vão de 10 tiles;
+//   4) desce um degrau e uma barra atravessa o vão de 8 tiles;
 //   5) a escada de corrida na parede da terceira torre: dois vãos de 9 tiles,
 //      cada muro 2 tiles mais alto que o outro, até o telhado da bandeira.
 export const BAIRRO_29 = buildLevel({
@@ -96,28 +96,29 @@ export const BAIRRO_29 = buildLevel({
       ],
     },
     // 6) O telhado da chaminé acaba e o Kem desce um degrau de 5 tiles pro
-    //    telhado da barra. Largura 9.
+    //    telhado da barra, com o checkpoint a 5 tiles da beirada do vão (tempo
+    //    de sobra pra tomar corrida depois de um tombo). Largura 9.
     {
       bands: [
         [0, 7, dot(9)],
         [8, 14, wall(9)],
       ],
       entities: [
-        { type: 'checkpoint', id: 'cp5', tx: 7, ty: 7 },
-        { type: 'coin', id: 'c08', tx: 3, ty: 7 },
+        { type: 'checkpoint', id: 'cp5', tx: 4, ty: 7 },
+        { type: 'coin', id: 'c08', tx: 5, ty: 7 },
       ],
     },
-    // 7) A barra: vão de 10 tiles com a barra perto do meio (col 5), 3 tiles
-    //    acima do telhado. Largura 10.
+    // 7) A barra: vão de 8 tiles com a barra na coluna 5 (3 tiles antes da
+    //    beirada de lá), 3 tiles acima do telhado. Largura 8.
     {
       bands: [
-        [0, 4, dot(10)],
-        [5, 5, bars(10, 5)],
-        [6, 14, dot(10)],
+        [0, 4, dot(8)],
+        [5, 5, bars(8, 5)],
+        [6, 14, dot(8)],
       ],
       entities: [
-        { type: 'sticker', id: 's2', tx: 8, ty: 5 },
-        { type: 'coin', id: 'c09', tx: 6, ty: 5 },
+        { type: 'sticker', id: 's2', tx: 6, ty: 5 },
+        { type: 'coin', id: 'c09', tx: 7, ty: 5 },
       ],
     },
     // 8) Pouso da barra e a base da terceira torre; checkpoint a 3 tiles da

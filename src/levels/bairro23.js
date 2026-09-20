@@ -7,17 +7,17 @@ const graf = (n) => 'W'.repeat(n);
 // Fase 23 da Cidade à noite — "Antenas". A terceira do bairro: torres altas e
 // finas, com antenas piscando no topo. Sem movimento novo e sem dica: é uma
 // revisão do que o Kem aprendeu, com UMA corrida na parede e DUAS barras
-// (cada uma com o vão de 9-10 tiles, a barra no meio e pouso largo). Um pouco
+// (cada uma com o vão de 8-9 tiles, a barra na coluna 5 e pouso largo). Um pouco
 // mais difícil que a Fase 22, no nível das Fases 18-20; nenhum obstáculo
 // passa da dificuldade da Fase 10, e nunca há mais de 25 tiles entre
 // checkpoints.
 //   1) telhado do começo e três torrezinhas (vãos de 3-4 tiles, um degrau);
 //   2) a rua, com UM cano de vapor, e o elevador que sobe a antena (7 tiles);
 //   3) o topo da antena, com o ventilador soprando a favor sobre um vão de 7;
-//   4) a primeira barra: vão de 9 tiles, barra no meio, dois telhados;
+//   4) a primeira barra: vão de 9 tiles, barra na coluna 5, dois telhados;
 //   5) um telhado mais baixo e a corrida na parede: vão de 10 tiles, muro
 //      grafitado de 2 linhas colado na beirada e o pouso no mesmo nível;
-//   6) a segunda barra (vão de 10 tiles) e a torre da bandeira.
+//   6) a segunda barra (vão de 8 tiles) e a torre da bandeira.
 export const BAIRRO_23 = buildLevel({
   id: 'bairro-23',
   name: 'Antenas',
@@ -105,13 +105,13 @@ export const BAIRRO_23 = buildLevel({
         { type: 'checkpoint', id: 'cp3', tx: 2, ty: 6 },
       ],
     },
-    // 7) A primeira barra: vão de 9 tiles, barra no meio (col 4), 2 tiles
-    //    acima do chão (agarra com um pulo, balança, solta pro outro lado).
-    //    Largura 9.
+    // 7) A primeira barra: vão de 9 tiles, barra na coluna 5 (4 tiles antes
+    //    da beirada de lá), 2 tiles acima do chão (agarra com um pulo,
+    //    balança, solta pro outro lado). Largura 9.
     {
       bands: [
         [0, 3, dot(9)],
-        [4, 4, dot(4) + '=' + dot(4)],
+        [4, 4, dot(5) + '=' + dot(3)],
         [5, 14, dot(9)],
       ],
       entities: [
@@ -160,16 +160,16 @@ export const BAIRRO_23 = buildLevel({
         { type: 'coin', id: 'c12', tx: 6, ty: 9 },
       ],
     },
-    // 11) A segunda barra: vão de 10 tiles, barra no meio (col 5), a 2 tiles
-    //     acima do chão. Largura 10.
+    // 11) A segunda barra: vão de 8 tiles, barra na coluna 5 (3 tiles antes
+    //     da beirada de lá), a 2 tiles acima do chão. Largura 8.
     {
       bands: [
-        [0, 6, dot(10)],
-        [7, 7, dot(5) + '=' + dot(4)],
-        [8, 14, dot(10)],
+        [0, 6, dot(8)],
+        [7, 7, dot(5) + '=' + dot(2)],
+        [8, 14, dot(8)],
       ],
       entities: [
-        { type: 'coin', id: 'c13', tx: 8, ty: 6 },
+        { type: 'coin', id: 'c13', tx: 6, ty: 6 },
       ],
     },
     // 12) A torre da bandeira. Largura 7.
