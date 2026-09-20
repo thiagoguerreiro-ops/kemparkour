@@ -5,7 +5,7 @@ const wall = (n) => '#'.repeat(n);
 
 // Fase 20 do Centro — "Hora do rush". O fecho do Centro: uma revisão de tudo
 // que o Kem aprendeu, numa fase comprida, na ordem — descer rolando, o andaime
-// (beirada), a chaminé (wall jump), o vão de 10 tiles (pulo duplo), UMA barra
+// (beirada), a chaminé (wall jump), o vão de 9 tiles (pulo duplo), UMA barra
 // (Fase 19), o túnel com vapor (deslizar), o telhado do ventilador e, no fim,
 // o guindaste que leva à bandeira, no alto da torre mais alta do Centro.
 // Nenhum obstáculo é mais difícil que os da Fase 10 ("Entre as paredes"); o
@@ -70,16 +70,16 @@ export const BAIRRO_20 = buildLevel({
         { type: 'checkpoint', id: 'cp3', tx: 13, ty: 6 },
       ],
     },
-    // 4) O vão do pulo duplo: 10 tiles no alto, com o checkpoint 5 tiles antes
-    //    da beirada. O terceiro adesivo paira sobre o vão, no arco do pulo
-    //    duplo. Largura 10.
+    // 4) O vão do pulo duplo: 9 tiles no alto (como o maior vão da Fase 16),
+    //    com o checkpoint 5 tiles antes da beirada. O terceiro adesivo paira
+    //    sobre o vão, no arco do pulo duplo. Largura 9.
     {
       bands: [
-        [0, 14, dot(10)],
+        [0, 14, dot(9)],
       ],
       entities: [
         { type: 'coin', id: 'c09', tx: 2, ty: 4 },
-        { type: 'sticker', id: 's3', tx: 5, ty: 2 },
+        { type: 'sticker', id: 's3', tx: 4, ty: 3 },
         { type: 'coin', id: 'c10', tx: 7, ty: 4 },
       ],
     },
@@ -99,14 +99,16 @@ export const BAIRRO_20 = buildLevel({
         { type: 'checkpoint', id: 'cp5', tx: 11, ty: 12 },
       ],
     },
-    // 6) A barra: buraco de 10 tiles na rua com a barra perto do meio (col 3), a 2
-    //    tiles acima do chão (agarra com um pulo, balança, solta pro outro
-    //    lado). Vão folgado e pouso largo do outro lado. Largura 10.
+    // 6) A barra: buraco de 7 tiles na rua com a barra bem no meio (col 3),
+    //    uns 2 tiles e meio acima do chão. Um pulo comum perto da beirada já
+    //    agarra nela; aí é só soltar (A) logo depois, com folga, que o Kem
+    //    passa pro outro lado (o pulo duplo sem a barra também atravessa).
+    //    Pouso largo do outro lado. Largura 7.
     {
       bands: [
-        [0, 9, dot(10)],
-        [10, 10, dot(3) + '=' + dot(6)],
-        [11, 14, dot(10)],
+        [0, 9, dot(7)],
+        [10, 10, dot(3) + '=' + dot(3)],
+        [11, 14, dot(7)],
       ],
       entities: [
         { type: 'coin', id: 'c13', tx: 5, ty: 8 },

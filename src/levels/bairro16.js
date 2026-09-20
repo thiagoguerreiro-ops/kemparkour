@@ -10,7 +10,7 @@ const wall = (n) => '#'.repeat(n);
 // cresce devagar, sempre com folga (o pulo duplo alcança ~13 tiles de vão e
 // ~6 de altura; aqui o maior vão é 9):
 //   1) vão de 8 tiles na rua (um pulo só alcança 7);
-//   2) vão de 6 tiles + telhado 4 tiles mais alto (mais largo E mais alto);
+//   2) vão de 5 tiles + telhado 4 tiles mais alto (pulo duplo e beirada);
 //   3) duas ilhas seguidas: o pulo duplo recarrega ao pousar no chão;
 //   4) o guindaste (plataforma) leva pro telhado alto, e lá em cima vem o
 //      vão maior da fase (9 tiles) até a bandeira.
@@ -64,19 +64,20 @@ export const BAIRRO_16 = buildLevel({
         { type: 'coin', id: 'c07', tx: 10, ty: 12 },
       ],
     },
-    // 4) Vão de 6 tiles, com um telhado 4 tiles mais alto do outro lado:
-    //    mais largo e mais alto ao mesmo tempo. Largura 6.
+    // 4) Vão de 5 tiles, com um telhado 4 tiles mais alto do outro lado:
+    //    mais alto que o vão do começo (pulo duplo e beirada). Largura 5.
     {
       bands: [
-        [0, 14, dot(6)],
+        [0, 14, dot(5)],
       ],
       entities: [
         { type: 'coin', id: 'c08', tx: 3, ty: 7 },
       ],
     },
-    // 5) Telhado do meio (4 tiles acima da rua). O segundo adesivo fica bem
-    //    no alto (pulo duplo reto pra cima; cair de volta é seguro).
-    //    Largura 10.
+    // 5) Telhado do meio (4 tiles acima da rua). O segundo adesivo fica no
+    //    ar, um pouco acima do telhado (um pulo segurado já alcança; cair de
+    //    volta é seguro). Checkpoint logo depois do pouso, pra o vão do
+    //    telhado não ficar a mais de 25 tiles do próximo. Largura 10.
     {
       bands: [
         [0, 8, dot(10)],
@@ -84,7 +85,8 @@ export const BAIRRO_16 = buildLevel({
       ],
       entities: [
         { type: 'coin', id: 'c09', tx: 2, ty: 8 },
-        { type: 'sticker', id: 's2', tx: 5, ty: 2 },
+        { type: 'checkpoint', id: 'cp2', tx: 4, ty: 8 },
+        { type: 'sticker', id: 's2', tx: 5, ty: 4 },
         { type: 'coin', id: 'c10', tx: 8, ty: 8 },
       ],
     },
@@ -96,7 +98,7 @@ export const BAIRRO_16 = buildLevel({
         [13, 14, wall(8)],
       ],
       entities: [
-        { type: 'checkpoint', id: 'cp2', tx: 3, ty: 12 },
+        { type: 'checkpoint', id: 'cp3', tx: 3, ty: 12 },
         { type: 'coin', id: 'c11', tx: 5, ty: 12 },
       ],
     },
@@ -118,7 +120,7 @@ export const BAIRRO_16 = buildLevel({
         [13, 14, wall(4)],
       ],
       entities: [
-        { type: 'checkpoint', id: 'cp3', tx: 0, ty: 12 },
+        { type: 'checkpoint', id: 'cp4', tx: 0, ty: 12 },
       ],
     },
     // 9) Segundo vão das ilhas: 7 tiles. Largura 7.
@@ -150,7 +152,7 @@ export const BAIRRO_16 = buildLevel({
       ],
       entities: [
         { type: 'platform', w: 2, from: { tx: 0, ty: 13 }, to: { tx: 0, ty: 7 }, speed: 55 },
-        { type: 'checkpoint', id: 'cp4', tx: 4, ty: 6 },
+        { type: 'checkpoint', id: 'cp5', tx: 4, ty: 6 },
         { type: 'coin', id: 'c15', tx: 7, ty: 6 },
       ],
     },

@@ -15,8 +15,9 @@ const bars = (w, ...cols) => Array.from({ length: w }, (_, i) => (cols.includes(
 // momentos do balanço. Ordem:
 //   1) vão de 8 tiles do telhado até a rua, barra a 2 tiles da beirada;
 //   2) vão de 8 com uma ilha de vapor no meio e a barra por cima;
-//   3) o guindaste leva ao telhado alto, e dali duas barras em sequência
-//      atravessam o maior vão da fase (12 tiles) até a rua da chegada;
+//   3) o guindaste leva ao telhado alto, e dali uma barra e uma ilha no meio
+//      do caminho atravessam o maior vão da fase (12 tiles) até a rua da
+//      chegada;
 //   4) volta da vitória: um muro (beirada) na rua até a bandeira.
 // Movimentos: jump, deslizar, beirada, wall jump, rolamento, pulo duplo e a
 // barra nova. Sem corrida na parede ainda.
@@ -49,7 +50,7 @@ export const BAIRRO_19 = buildLevel({
         [9, 14, wall(8)],
       ],
       entities: [
-        { type: 'tutorial', tx: 0, ty: 8, w: 6, move: 'swing', text: 'Pulou perto de uma barra? O Kem se pendura! Toque ◀ ▶ pra balançar e A pra soltar.' },
+        { type: 'tutorial', tx: 0, ty: 8, w: 6, move: 'swing', text: 'Pulou perto de uma barra? O Kem se pendura! Toque A logo depois pra soltar (◀ ▶ dão balanço).' },
         { type: 'checkpoint', id: 'cp0', tx: 3, ty: 8 },
       ],
     },
@@ -90,7 +91,7 @@ export const BAIRRO_19 = buildLevel({
       entities: [
         { type: 'steam', tx: 3, ty: 12, dir: 'up', length: 2, onMs: 1200, offMs: 2400, offsetMs: 0 },
         { type: 'coin', id: 'c07', tx: 6, ty: 7 },
-        { type: 'sticker', id: 's2', tx: 4, ty: 4 },
+        { type: 'sticker', id: 's2', tx: 6, ty: 5 },
         { type: 'coin', id: 'c08', tx: 7, ty: 10 },
       ],
     },
@@ -117,15 +118,16 @@ export const BAIRRO_19 = buildLevel({
         { type: 'checkpoint', id: 'cp3', tx: 4, ty: 8 },
       ],
     },
-    // 8) O vão maior: 12 tiles do telhado alto até a rua, com duas barras
-    //    (a segunda 5 colunas depois e 3 linhas mais baixa). Largura 12.
+    // 8) O vão maior: 12 tiles do telhado alto até a rua. A barra (col 2)
+    //    lança o Kem pra uma ilha de 4 tiles (cols 5-8, 1 tile abaixo do
+    //    telhado) e da ilha é só um pulinho de 3 tiles até a rua. Errar o
+    //    balanço só cai no buraco e volta pro cp3. Largura 12.
     {
       bands: [
         [0, 3, dot(12)],
         [4, 4, bars(12, 2)],
-        [5, 6, dot(12)],
-        [7, 7, bars(12, 7)],
-        [8, 14, dot(12)],
+        [5, 9, dot(12)],
+        [10, 14, dot(5) + wall(4) + dot(3)],
       ],
       entities: [
         { type: 'coin', id: 'c10', tx: 5, ty: 5 },
