@@ -9,7 +9,7 @@
 // `skipWaiting` + `clients.claim` fazem o celular do Arthur trocar pra
 // versão nova assim que ele abrir o jogo de novo — sem ficar preso numa
 // versão velha.
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE_NAME = `kem-parkour-${VERSION}`;
 const PRECACHE_URL = './precache.json';
 

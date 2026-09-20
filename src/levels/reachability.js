@@ -98,6 +98,48 @@ for (const [jumpHold, secondDelays] of [
   }
 }
 
+// Barras (balanço): a barra só importa se houver uma por perto (em tiles).
+const NEAR_BAR_X_TILES = 16;
+const NEAR_BAR_Y_TILES = 9;
+// Como o Kem balança depois de agarrar: sem mexer, segurando o lado da
+// corrida (só empurra quando o balanço vai pra esse lado) ou "acompanhando"
+// o balanço (segura sempre o lado pra onde ele vai, o que enche mais rápido).
+const SWING_PUMPS = ['none', 'hold', 'follow'];
+// Segundos depois de agarrar até soltar (pulo: leva o impulso extra de
+// PHYS.SWING_RELEASE_BOOST). Um período do pêndulo dura ~0.9s; passos de
+// ~0.2s cobrem soltar em qualquer ponto do arco, e os últimos, com o balanço
+// já cheio de bombeadas.
+const SWING_RELEASES = [0.25, 0.45, 0.7, 0.9, 1.15, 1.4, 1.8];
+// Depois de soltar, atrasos até o pulo duplo (a barra recarrega o ar); null = sem.
+const SWING_DJ_DELAYS = [null, 0.1, 0.3];
+const SWING_SECOND_DELAYS = [0.4, 0.65];
+const SWING_APPROACH_DELAYS = [0, 0.2];
+const SWING_EXTRA_TIME = 2.5;
+
+// Aproximação até a barra (ou o muro de corrida): pulo cheio na direção da barra, parado, com
+// corrida ou na beirada (o mesmo do básico); depois é com o swingPolicy / runWallPolicy.
+const GRAB_APPROACHES = [];
+for (const dir of [-1, 1]) {
+  for (const delay of SWING_APPROACH_DELAYS) GRAB_APPROACHES.push({ dir, delay, edge: false, secondDelay: null });
+  GRAB_APPROACHES.push({ dir, delay: 0, edge: true, secondDelay: null });
+}
+// Com pulo duplo (fase 16+ — sempre junto com a barra, que só vem na 19), a
+// própria aproximação também pode usar o segundo toque no ar.
+const GRAB_DOUBLE_APPROACHES = [];
+for (const dir of [-1, 1]) {
+  for (const secondDelay of SWING_SECOND_DELAYS) {
+    for (const delay of SWING_APPROACH_DELAYS) GRAB_DOUBLE_APPROACHES.push({ dir, delay, edge: false, secondDelay });
+    GRAB_DOUBLE_APPROACHES.push({ dir, delay: 0, edge: true, secondDelay });
+  }
+}
+
+// Muros de corrida: só importam se houver um pedaço deles por perto (em
+// tiles). Depois de começar a correr no muro, o pulo do muro (toque de A)
+// acontece `wjDelay` segundos depois (null = nunca) e, já solto do muro, o
+// pulo duplo `djDelay` segundos depois (null = nunca).
+const RUNWALL_JUMP_DELAYS = [null, 0.25, 0.5, 0.75, 0.98];
+const RUNWALL_DJ_DELAYS = [null, 0.1, 0.3];
+
 const tileKey = (tx, ty) => `${tx},${ty}`;
 
 // Um tile (tx, ty) é "de pé" se há chão sólido embaixo e o corpo do Kem cabe
@@ -208,6 +250,109 @@ function doubleJumpPolicy({ dir, jumpHold, delay, edge, secondDelay }) {
   };
 }
 
+// Barra: aproxima como o básico (pulo cheio segurando `dir`), e quando o
+// Kem agarra uma barra (state 'swing') balança com o padrão `pump` e solta
+// com o pulo `releaseAt` segundos depois de agarrar. Depois de soltar segue
+// segurando `dir` até pousar. `shared.noGrab` é compartilhado entre todas as
+// variações (pump/releaseAt) da mesma aproximação: se uma aproximação nunca
+// agarra a barra, as outras seis vezes três variações nem precisam rodar.
+function swingPolicy({ dir, delay, edge, secondDelay, pump, releaseAt, djDelay }, shared) {
+  let jumpAt = edge ? null : delay;
+  let launched = false;
+  let swingSince = null;
+  let releasedAt = null;
+  let pressLeft = 0;
+  let pumpDir = 0;
+  return {
+    duration: ATTEMPT_TIME + SWING_EXTRA_TIME,
+    input(t) {
+      let jump;
+      if (swingSince === null) {
+        jump = jumpAt !== null && t >= jumpAt && t < jumpAt + FULL_JUMP_HOLD;
+        const second = jumpAt !== null && secondDelay !== null ? jumpAt + secondDelay : null;
+        if (second !== null && t >= second && t < second + FULL_JUMP_HOLD) jump = true;
+      } else if (releasedAt === null) {
+        jump = pressLeft > 0;
+      } else {
+        // Depois de soltar, o pulo duplo (a barra recarrega o ar) num segundo toque.
+        const at = releasedAt + djDelay;
+        jump = djDelay !== null && t >= at && t < at + FULL_JUMP_HOLD;
+      }
+      const d = swingSince !== null && releasedAt === null ? pumpDir : dir;
+      return { left: d < 0, right: d > 0, jump, action: false };
+    },
+    after(t, kem) {
+      if (edge && jumpAt === null && kem.state === 'air') jumpAt = t + PHYS.STEP;
+      if (kem.state !== 'ground') launched = true;
+      if (pressLeft > 0) pressLeft -= 1;
+      if (kem.state === 'swing') {
+        if (swingSince === null) swingSince = t;
+        pumpDir = pump === 'none' ? 0 : pump === 'hold' ? dir : Math.sign(kem.swing.omega) || dir;
+        if (t - swingSince >= releaseAt) pressLeft = 2;
+      } else if (swingSince !== null && releasedAt === null) {
+        releasedAt = t + PHYS.STEP;
+      }
+    },
+    gaveUp(t, kem) {
+      if (swingSince !== null) return false;
+      if (shared.noGrab) return true;
+      const failed = (launched && GROUNDED_STATES.has(kem.state)) || t > ATTEMPT_TIME;
+      if (failed) shared.noGrab = true;
+      return failed;
+    },
+  };
+}
+
+// Muro de corrida: aproxima como o swingPolicy (pulo com `dir` na mão) e,
+// quando o Kem passa a correr no muro (state 'wallrun'), segue segurando
+// `dir` durante o trecho todo; `wjDelay` depois do começo aperta A (pulo do
+// muro, mantém a velocidade da corrida), e `djDelay` depois de largar o muro
+// aperta de novo (pulo duplo). `shared.noRun` é compartilhado entre as
+// variações da mesma aproximação: se ela nunca chega a correr no muro, as
+// outras nem precisam rodar.
+function runWallPolicy({ dir, delay, edge, secondDelay, wjDelay, djDelay }, shared) {
+  let jumpAt = edge ? null : delay;
+  let launched = false;
+  let runSince = null;
+  let endedAt = null;
+  let pressLeft = 0;
+  return {
+    duration: ATTEMPT_TIME + SWING_EXTRA_TIME,
+    input(t) {
+      let jump = false;
+      if (runSince === null) {
+        jump = jumpAt !== null && t >= jumpAt && t < jumpAt + FULL_JUMP_HOLD;
+        const second = jumpAt !== null && secondDelay !== null ? jumpAt + secondDelay : null;
+        if (second !== null && t >= second && t < second + FULL_JUMP_HOLD) jump = true;
+      } else if (endedAt === null) {
+        jump = pressLeft > 0;
+      } else if (djDelay !== null) {
+        const at = endedAt + djDelay;
+        jump = t >= at && t < at + FULL_JUMP_HOLD;
+      }
+      return { left: dir < 0, right: dir > 0, jump, action: false };
+    },
+    after(t, kem) {
+      if (edge && jumpAt === null && kem.state === 'air') jumpAt = t + PHYS.STEP;
+      if (kem.state !== 'ground') launched = true;
+      if (pressLeft > 0) pressLeft -= 1;
+      if (kem.state === 'wallrun') {
+        if (runSince === null) runSince = t;
+        if (wjDelay !== null && t - runSince >= wjDelay) pressLeft = 2;
+      } else if (runSince !== null && endedAt === null) {
+        endedAt = t + PHYS.STEP;
+      }
+    },
+    gaveUp(t, kem) {
+      if (runSince !== null) return false;
+      if (shared.noRun) return true;
+      const failed = (launched && GROUNDED_STATES.has(kem.state)) || t > ATTEMPT_TIME;
+      if (failed) shared.noRun = true;
+      return failed;
+    },
+  };
+}
+
 // Carona: sobe na plataforma (andando ou pulando), fica parado `rideDelay`
 // segundos sendo levado, e depois corre e pula para o lado `dir`.
 function ridePolicy({ dir, mount, rideDelay }) {
@@ -272,6 +417,14 @@ function nearAnyPlatform(tx, ty, defs) {
   });
 }
 
+function nearAnyBar(tx, ty, bars) {
+  return bars.some((b) => Math.abs(b.x / TILE - tx) <= NEAR_BAR_X_TILES && Math.abs(b.y / TILE - ty) <= NEAR_BAR_Y_TILES);
+}
+
+function nearAnyTile(tx, ty, tiles) {
+  return tiles.some((w) => Math.abs(w.tx - tx) <= NEAR_BAR_X_TILES && Math.abs(w.ty - ty) <= NEAR_BAR_Y_TILES);
+}
+
 // Explora, a partir do spawn, o conjunto de posições em que o Kem consegue
 // ficar de pé de verdade: busca em largura sobre tiles "de pé", usando a
 // física real (Kem + LevelRun-style update) como função de aresta. De cada
@@ -288,7 +441,11 @@ function nearAnyPlatform(tx, ty, defs) {
 // pontos do ciclo da plataforma; com o wall jump liberado, também tenta
 // chaminés (pula de parede em parede alternando o lado a cada toque, veja
 // chimneyPolicy); com o pulo duplo liberado, também tenta soltar o botão e
-// apertar de novo no ar depois de alguns atrasos (veja doubleJumpPolicy).
+// apertar de novo no ar depois de alguns atrasos (veja doubleJumpPolicy); com o
+// balanço liberado e alguma barra por perto, tenta agarrar a barra, balançar e
+// soltar em vários momentos (veja swingPolicy); com a corrida no muro
+// liberada e algum muro W por perto, tenta pular pro muro segurando o lado e
+// correr nele, com ou sem pulo do muro/pulo duplo depois (veja runWallPolicy).
 // Sempre que o Kem fica pendurado numa beirada durante uma tentativa, a
 // entrada passa a apertar A em toques alternados até ele subir ou soltar —
 // isso vale pra qualquer política, não só pra beirada em si. Ventiladores
@@ -306,6 +463,13 @@ export function computeReachability(map, spawn, number, items = [], extras = {})
   const phases = maxPeriod > 0
     ? Array.from({ length: RIDE_PHASES }, (_, k) => (k * maxPeriod) / RIDE_PHASES)
     : [0];
+
+  const runWalls = [];
+  if (unlocked.includes('wallrun')) {
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) if (map.isRunWall(tx, ty)) runWalls.push({ tx, ty });
+    }
+  }
 
   const standableCache = new Map();
   const isStandable = (tx, ty) => {
@@ -358,6 +522,36 @@ export function computeReachability(map, spawn, number, items = [], extras = {})
       for (const a of DOUBLE_JUMP_ATTEMPTS) plans.push({ phase: 0, policy: () => doubleJumpPolicy(a) });
     }
 
+    if (unlocked.includes('swing') && nearAnyBar(pos.tx, pos.ty, map.bars)) {
+      const approaches = unlocked.includes('doublejump')
+        ? [...GRAB_APPROACHES, ...GRAB_DOUBLE_APPROACHES]
+        : GRAB_APPROACHES;
+      for (const approach of approaches) {
+        const shared = { noGrab: false };
+        for (const pump of SWING_PUMPS) {
+          for (const releaseAt of SWING_RELEASES) {
+            for (const djDelay of SWING_DJ_DELAYS) {
+              plans.push({ phase: 0, policy: () => swingPolicy({ ...approach, pump, releaseAt, djDelay }, shared) });
+            }
+          }
+        }
+      }
+    }
+
+    if (runWalls.length > 0 && nearAnyTile(pos.tx, pos.ty, runWalls)) {
+      const approaches = unlocked.includes('doublejump')
+        ? [...GRAB_APPROACHES, ...GRAB_DOUBLE_APPROACHES]
+        : GRAB_APPROACHES;
+      for (const approach of approaches) {
+        const shared = { noRun: false };
+        for (const wjDelay of RUNWALL_JUMP_DELAYS) {
+          for (const djDelay of RUNWALL_DJ_DELAYS) {
+            plans.push({ phase: 0, policy: () => runWallPolicy({ ...approach, wjDelay, djDelay }, shared) });
+          }
+        }
+      }
+    }
+
     for (const plan of plans) {
       const world = makeWorld(map, extras, plan.phase);
       const policy = plan.policy();
@@ -377,7 +571,7 @@ export function computeReachability(map, spawn, number, items = [], extras = {})
         stepsUsed += 1;
         if (stepsUsed > STEP_CAP) { capped = true; break outer; }
         policy.after(t, kem, map);
-        if (policy.gaveUp(t)) break;
+        if (policy.gaveUp(t, kem)) break;
 
         markItems(kem);
 
