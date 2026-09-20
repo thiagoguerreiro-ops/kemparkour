@@ -23,6 +23,7 @@
   "./src/levels/bairro14.js",
   "./src/levels/bairro15.js",
   "./src/levels/bairro16.js",
+  "./src/levels/bairro17.js",
   "./src/levels/bairro18.js",
   "./src/levels/build.js",
   "./src/levels/levels.js",
